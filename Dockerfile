@@ -1,10 +1,16 @@
 
-### Pull base image ###
+FROM node:20-alpine AS build
 
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci
 
-### Build Project ###
+COPY . .
+RUN npm run build
 
+FROM nginx:1.27-alpine
 
-### Run ###
+COPY --from=build /app/dist/first-app/browser /usr/share/nginx/html
+EXPOSE 80
 
 
