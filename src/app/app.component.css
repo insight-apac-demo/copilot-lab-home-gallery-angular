@@ -7,6 +7,12 @@ header {
   padding: var(--content-padding);
   box-shadow: 0px 5px 25px var(--shadow-color);
 }
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
 .content {
   padding: var(--content-padding);
 }

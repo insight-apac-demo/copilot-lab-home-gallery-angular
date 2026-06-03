@@ -1,49 +1,77 @@
 
-# GitHub Copilot Workshop using Angular
+# GitHub Copilot Home Gallery Workshop
 
-## Enhance a Home Gallery app using GitHub Copilot
+This workshop uses a small Angular 19 application to practice practical GitHub Copilot workflows in VS Code. The app already has routing, search, a details page, a reactive form, a mock API option, tests, and a production Dockerfile so participants can focus on how to inspect, extend, and validate code with Copilot instead of scaffolding from scratch.
 
-In this fun workshop, you will learn how to use GitHub Copilot to enhance an Angular app, with little to no Angular experience required.
+Estimated time: 45 to 90 minutes.
 
-The project contains a simple Angular application.
+## Prerequisites
 
-Participants will be guided to install the GitHub Copilot VS Code extension, and then use it to enhance the app. You will also use GitHub Copilot to write some missing unit tests for the app. Estimated time to complete: `10 to 60 minutes`.
+- Node.js 20 LTS or newer
+- npm 10 or newer
+- VS Code with GitHub Copilot and GitHub Copilot Chat enabled
+- Optional: Docker Desktop if you want to complete the container exercise locally
 
-## Instructions 
+## Quick Start
 
-Inside the `labs` folder you will find a number of markdown files that contain the instructions for this workshop.
+Install dependencies and run the Angular app:
+
+```bash
+npm install
+npm start
+```
+
+The app is served at `http://localhost:4200`.
+
+If you want the mock REST API used in exercise 6, open a second terminal and run:
+
+```bash
+npm run api
+```
+
+The mock API is served at `http://localhost:3000/locations`.
+
+## Validation Commands
+
+Use these commands as checkpoints throughout the workshop:
+
+```bash
+npm run typecheck
+npm run lint
+npm test
+npm run build
+```
+
+## Lab Guide
+
+Inside the `labs` folder you will find the step-by-step exercises for the workshop.
 
 Filename | Description
 --- | ---
-[exercise-1.md](</labs/exercise-1.md>) | Running Angular App
-[exercise-2.md](</labs/exercise-2.md>) | Add routes to the application
-[exercise-3.md](</labs/exercise-3.md>) | Integrate details page into application
-[exercise-4.md](</labs/exercise-4.md>) | Adding a form to your Angular app
-[exercise-5.md](</labs/exercise-5.md>) | Add the search feature to your app
-[exercise-6.md](</labs/exercise-6.md>) | Add HTTP communication to your app
-[exercise-7.md](</labs/exercise-7.md>) | Building tests
-[exercise-8.md](</labs/exercise-8.md>) | Create a Dockerfile
-[exercise-9.md](</labs/exercise-9.md>) | Document the code
+[exercise-1.md](./labs/exercise-1.md) | Install dependencies and run the app
+[exercise-2.md](./labs/exercise-2.md) | Review and modernize routing
+[exercise-3.md](./labs/exercise-3.md) | Wire dynamic navigation and the details page
+[exercise-4.md](./labs/exercise-4.md) | Add a reactive application form
+[exercise-5.md](./labs/exercise-5.md) | Improve search and accessibility
+[exercise-6.md](./labs/exercise-6.md) | Connect to the mock API with a safe fallback
+[exercise-7.md](./labs/exercise-7.md) | Add and run meaningful tests
+[exercise-8.md](./labs/exercise-8.md) | Build and run the Docker image
+[exercise-9.md](./labs/exercise-9.md) | Refresh project documentation with Copilot
 
-## Project Structure
+## Project Notes
 
-In this project you will find:
+- `src/` contains the active application used by the workshop.
+- `src_solution/` is a reference snapshot and is not used by the build, lint, or test commands.
+- `src/db.json` powers the optional `json-server` mock API.
+- The project uses standalone Angular components and `app.config.ts` for app-wide providers.
 
-* the Angular Home Gallery application
-* a devcontainer that installs GitHub Copilot when the Codespace is created (If you want to use Codespaces)
-* an `labs` folder all the instructions for this workshop.
+## Copilot Workflow Tips
 
-## FAQ 
-
-- **How do I get a GitHub Copilot license?**
-  - You can request a trial license from your GitHub Sales representative or via Copilot for Individuals or Business licenses.
-- **How do I get a GitHub Codespaces license?**
-    - Codespaces is included with GitHub Enterprise Cloud, GitHub Enterprise Server, and GitHub Free. You can check under your [billing settings page](https://github.com/settings/billing).
-- **I am having trouble activating GitHub Copilot after I load the plugin, what should I do?**
-    - This could be because you launched your Codespace before you activated GitHub Copilot or accepted the invitation to the trial org. Please try to reload your Codespace and try again.
+- Use Copilot Chat to ask for targeted code changes, explanations, and validation steps.
+- Attach files or select code before prompting when you want a more precise answer.
+- Use inline chat or editor actions for small, local changes.
+- Ask Copilot to explain errors after you run the validation commands instead of guessing.
 
 ## Acknowledgements
 
-The Angular Home Gallery app and lab exercise is based on below tutorial: https://angular.dev/tutorials/first-app/01-hello-world
-
-Enjoy your workshop!
+The Home Gallery sample is based on the Angular first-app tutorial and refreshed for a current VS Code and GitHub Copilot workshop flow.

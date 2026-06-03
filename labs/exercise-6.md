@@ -1,226 +1,178 @@
 
-# Exercise 6: Add HTTP communication to your app
+# Exercise 6: Connect to a Mock API
 
-This lab will integrate HTTP and an API into the app.
+## Goal
 
-Up until now, the app has been reading data from a static array in an Angular service. The next step is to use a JSON server that your app will communicate with over HTTP. The HTTP request will simulate the experience of working with data from a server.
+Load housing data from a local mock API server, with a fallback to in-memory data if the API is unavailable.
 
-## Configure the JSON server
+By the end of this exercise, you will understand:
+- why frontend apps fetch data asynchronously
+- how to read data from an API endpoint
+- how to keep the app usable when the API is down
 
-JSON Server is an open source tool used to create mock REST APIs. You'll use it to serve the housing location data that is currently stored in the housing service.
+## Part 1: Start the mock API server
 
-Ask copilot how to `Install json-server from npm`. You can use the `terminal` shortcut icon to run output script directly in VS code terminal
+This workshop includes `json-server`, a tool that turns a JSON file into a local REST API.
+
+Think of this as a "practice backend" running on your machine.
+
+Open a second terminal and run:
+
+```bash
+npm run api
+```
+
+You should see output that includes:
+```
+  JSON Server is running
+  Port: 3000
+```
+
+Now open this URL in your browser:
+
+`http://localhost:3000/locations`
+
+You should see JSON data (an array of housing location objects). That data comes from `src/db.json`.
+
+If this URL works, your mock API is ready.
 
 <details>
-  <summary>Hint - Possible Solution</summary>
-
-```
-npm install -g json-server
-```
-
+  <summary>What is json-server?</summary>
+  json-server simulates a REST API by serving JSON files. In real projects, this might be a Node backend or cloud database. Here it lets you practice real API flow without building a backend.
 </details>
 
-In the root directory of your project, find `src/db.json` file. This is where you will store the data for the json-server. Open `db.json` and ask copilot to generate 10 more records based on the existing record. Copilot should generate more elements in the same structure.
+## Part 2: Review the async service pattern
 
+Open `src/app/housing.service.ts`.
 
-<details>
-  <summary>Hint - Possible Solution</summary>
+This service is the app's data layer. Components should not call `fetch` directly; they ask the service for data.
 
-```
-{
-    "locations": [
-        {
-            "id": 0,
-            "name": "Acme Fresh Start Housing",
-            "city": "Chicago",
-            "state": "IL",
-            "photo": "https://angular.dev/assets/images/tutorials/common/bernard-hermant-CLKGGwIBTaY-unsplash.jpg",
-            "availableUnits": 4,
-            "wifi": true,
-            "laundry": true
-        }
-    ]
-}
+You should see a pattern like this:
 
-```
+```typescript
+import { Injectable } from '@angular/core';
+import { HousingLocation } from './housinglocation';
 
-</details>
-
-Save this file. Time to test your configuration. From the command line, at the root of your project run the following commands. In your web browser, navigate to the `http://localhost:3000/locations` and confirm that the response includes the data stored in `db.json`.
-
-
-<details>
-  <summary>Hint - Possible Solution</summary>
-
-```
-json-server --watch db.json
-```
-
-</details>
-
-## Update service to use web server instead of local array
-
-The data source has been configured, the next step is to update your web app to connect to it and use the data.
-
-Go to `src/app/housing.service.ts`, update the code to remove housingLocationList property and the array containing the data. Add a string property called url and set its value to `http://localhost:3000/locations`. This code will result in errors in the rest of the file because it depends on the housingLocationList property. We're going to update the service methods next.
-
-```
-// use localhost if running locally. 
-// if you are using codespaces, make sure to make json-server port public and use full codespaces url.
-
-url = 'http://localhost:3000/locations';
-```
-
-Update the `getAllHousingLocations` function to make a call to the web server you configured. The code should use asynchronous code to make a GET request over HTTP.
-
-Ask copilot to implement the same logic using `fetch`. Then see if it can use HttpClient provided by Angular as an alternative.
-
-<details>
-  <summary>Hint - Possible Solution</summary>
-
-```
-// app/housing.service.ts
-import {Injectable} from '@angular/core';
-import {HousingLocation} from './housinglocation';
 @Injectable({
-  providedIn: 'root',
+  providedIn: 'root'
 })
 export class HousingService {
-  url = 'http://localhost:3000/locations';
+  private apiUrl = 'http://localhost:3000/locations';
+  private fallbackData: HousingLocation[] = [
+    // ... in-memory array with sample data ...
+  ];
 
   async getAllHousingLocations(): Promise<HousingLocation[]> {
-    const data = await fetch(this.url);
-    return (await data.json()) ?? [];
+    try {
+      const response = await fetch(this.apiUrl);
+      return await response.json();
+    } catch (error) {
+      console.warn('API unavailable, using fallback data');
+      return this.fallbackData;
+    }
   }
-  getHousingLocationById(id: number): HousingLocation | undefined {
-    return this.housingLocationList.find((housingLocation) => housingLocation.id === id);
-  }
-  submitApplication(firstName: string, lastName: string, email: string) {
-    // tslint:disable-next-line
-    console.log(firstName, lastName, email);
-  }
-}
 
-```
-
-</details>
-
-Update the `getHousingLocationsById` function to make a call to the web server you configured in the same way with filter.
-
-<details>
-  <summary>Hint - Possible Solution</summary>
-
-```
-// app/housing.service.ts
-async getHousingLocationById(id: number): Promise<HousingLocation | undefined> {
-  const data = await fetch(`${this.url}/${id}`);
-  return (await data.json()) ?? {};
-}
-```
-
-</details>
-
-Once all the updates are complete, your updated service could look similar to below (but don't have to).
-
-<details>
-  <summary>Hint - Possible Solution</summary>
-
-```
-// Final version of housing.service.ts
-import {Injectable} from '@angular/core';
-import {HousingLocation} from './housinglocation';
-@Injectable({
-  providedIn: 'root',
-})
-export class HousingService {
-  url = 'http://localhost:3000/locations';
-  async getAllHousingLocations(): Promise<HousingLocation[]> {
-    const data = await fetch(this.url);
-    return (await data.json()) ?? [];
-  }
   async getHousingLocationById(id: number): Promise<HousingLocation | undefined> {
-    const data = await fetch(`${this.url}/${id}`);
-    return (await data.json()) ?? {};
-  }
-  submitApplication(firstName: string, lastName: string, email: string) {
-    // tslint:disable-next-line
-    console.log(firstName, lastName, email);
-  }
-}
-```
-
-</details>
-
-## Update the components to use asynchronous calls to the housing service
-
-The server is now reading data from the HTTP request but the components that rely on the service now have errors because they were programmed to use the synchronous version of the service.
-
-In `src/app/details/details.component.ts`, update the constructor to use the new asynchronous version of the `getHousingLocationById` method.
-
-<details>
-  <summary>Hint - Possible Solution</summary>
-
-```
-// app/details/details.component.ts
-
-import {Component, inject} from '@angular/core';
-import {CommonModule} from '@angular/common';
-import {ActivatedRoute} from '@angular/router';
-import {HousingService} from '../housing.service';
-import {HousingLocation} from '../housinglocation';
-import {FormControl, FormGroup, ReactiveFormsModule} from '@angular/forms';
-@Component({
-  selector: 'app-details',
-  imports: [CommonModule, ReactiveFormsModule],
-  template: `...`,
-  styleUrls: ['./details.component.css'],
-})
-export class DetailsComponent {
-  route: ActivatedRoute = inject(ActivatedRoute);
-  housingService = inject(HousingService);
-  housingLocation: HousingLocation | undefined;
-  applyForm = new FormGroup({
-    firstName: new FormControl(''),
-    lastName: new FormControl(''),
-    email: new FormControl(''),
-  });
-  constructor() {
-    const housingLocationId = parseInt(this.route.snapshot.params['id'], 10);
-    this.housingService.getHousingLocationById(housingLocationId).then((housingLocation) => {
-      this.housingLocation = housingLocation;
-    });
-  }
-  submitApplication() {
-    this.housingService.submitApplication(
-      this.applyForm.value.firstName ?? '',
-      this.applyForm.value.lastName ?? '',
-      this.applyForm.value.email ?? '',
-    );
+    try {
+      const response = await fetch(`${this.apiUrl}/${id}`);
+      return await response.json();
+    } catch (error) {
+      return this.fallbackData.find(location => location.id === id);
+    }
   }
 }
 ```
 
-</details>
+What this does, step by step:
+1. Try to fetch from the API first (`http://localhost:3000/locations`)
+2. If the API call fails, catch the error
+3. Return local fallback data so the app still works
 
-In `src/app/home/home.component.ts`, update the constructor to use the new asynchronous version of the `getAllHousingLocations` method.
+Why this matters:
+- learners can continue even if the API is not running
+- users don't get a blank or broken page during temporary failures
+- components always receive the same return type (`Promise<...>`) no matter which path is used
+
+Ask Copilot to explain any part you're unsure about:
+
+```text
+Explain what happens if the fetch() call fails and why we catch the error instead of letting it crash.
+```
 
 <details>
-  <summary>Hint - Possible Solution</summary>
-
-```
-// src/app/home/home.component.ts
-
-  constructor() {
-    this.housingService.getAllHousingLocations().then((housingLocation) => {
-      this.housingLocationList = housingLocation;
-      this.filteredLocationList = this.housingLocationList;
-    });
-  }
-```
-
+  <summary>Why async/await instead of .then()?</summary>
+  `async/await` makes promise-based code easier to read. `await` pauses until the Promise resolves. `try/catch` handles failures in one place, which is easier for beginners to reason about.
 </details>
 
-Save your code. Open the application in the browser and confirm that it runs without any errors.
+## Part 3: Verify components await the service
 
----------------
+Open `src/app/home/home.component.ts`. The `ngOnInit` should look like:
+
+```typescript
+async ngOnInit() {
+  this.housingLocationList = await this.housingService.getAllHousingLocations();
+  this.filteredLocationList = this.housingLocationList;
+}
+```
+
+Notice `await`: the component waits for data before using it.
+
+Without `await`, you may see empty UI state or errors from trying to use data that has not arrived yet.
+
+Open `src/app/details/details.component.ts`. The location loading should look like:
+
+```typescript
+async ngOnInit() {
+  const id = parseInt(this.route.snapshot.paramMap.get('id') ?? '0', 10);
+  this.housingLocation = await this.housingService.getHousingLocationById(id);
+}
+```
+
+Same pattern:
+- mark method as `async`
+- `await` service result
+- assign returned value to component state
+
+This keeps Home and Details consistent.
+
+Quick mental model:
+1. User opens page
+2. Component starts loading
+3. Service requests API
+4. Service returns API data or fallback data
+5. Component renders the result
+
+<details>
+  <summary>What if I'm still not seeing data?</summary>
+  Make sure:
+  1. `npm run api` is running in a second terminal
+  2. TypeScript type errors are resolved (check the Problems panel)
+  3. The browser console shows no fetch errors
+  4. `src/db.json` has housing location objects
+  5. you refreshed the browser after starting API
+</details>
+
+## Part 4: Prove both modes work (API on and API off)
+
+Run this quick verification so you truly understand the fallback behavior.
+
+1. Keep `npm run api` running.
+2. Open the app and confirm home and details pages show data.
+3. Stop the API terminal (Ctrl+C).
+4. Refresh the app.
+5. Confirm data still appears from fallback.
+
+If step 5 works, your resilience design is correct.
+
+## Checkpoint
+
+✓ `npm run api` is running in a separate terminal  
+✓ `http://localhost:3000/locations` shows JSON in the browser  
+✓ The app loads housing data (check home page)  
+✓ Clicking a property loads its details correctly  
+✓ Stop the `npm run api` process and reload the app—it should still show fallback data  
+✓ No console errors about CORS or fetch failures  
+
+---
+
 [Previous](./exercise-5.md) | [Next](./exercise-7.md)

@@ -5,8 +5,9 @@ import {HousingLocation} from './housinglocation';
 })
 export class HousingService {
   readonly baseUrl = 'https://angular.dev/assets/images/tutorials/common';
+  readonly url = 'http://localhost:3000/locations';
 
-  protected housingLocationList: HousingLocation[] = [
+  protected fallbackHousingLocationList: HousingLocation[] = [
     {
       id: 0,
       name: 'Acme Fresh Start Housing',
@@ -109,12 +110,36 @@ export class HousingService {
     },
   ];
 
-  getAllHousingLocations(): HousingLocation[] {
-    return this.housingLocationList;
+  async getAllHousingLocations(): Promise<HousingLocation[]> {
+    try {
+      const response = await fetch(this.url);
+      if (!response.ok) {
+        throw new Error('Unable to load housing locations from the mock API.');
+      }
+
+      return ((await response.json()) as HousingLocation[]) ?? [];
+    } catch {
+      return this.fallbackHousingLocationList;
+    }
   }
 
-  getHousingLocationById(id: number): HousingLocation | undefined {
-    return this.housingLocationList.find((housingLocation) => housingLocation.id === id);
+  async getHousingLocationById(id: number): Promise<HousingLocation | undefined> {
+    try {
+      const response = await fetch(`${this.url}/${id}`);
+      if (!response.ok) {
+        throw new Error('Unable to load the housing location from the mock API.');
+      }
+
+      return ((await response.json()) as HousingLocation) ?? undefined;
+    } catch {
+      return this.fallbackHousingLocationList.find((housingLocation) => housingLocation.id === id);
+    }
+  }
+
+  submitApplication(firstName: string, lastName: string, email: string) {
+    console.log(
+      `Homes application received: firstName: ${firstName}, lastName: ${lastName}, email: ${email}.`,
+    );
   }
 
 }

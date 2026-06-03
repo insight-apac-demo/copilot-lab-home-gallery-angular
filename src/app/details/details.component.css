@@ -1,0 +1,75 @@
+.listing-photo {
+	height: 37.5rem;
+	width: 50%;
+	object-fit: cover;
+	border-radius: 1.875rem;
+	float: right;
+}
+
+.listing-heading {
+	font-size: 3rem;
+	font-weight: 700;
+	margin-bottom: 0.9375rem;
+}
+
+.listing-location::before {
+	content: url('/assets/location-pin.svg') / '';
+}
+
+.listing-location {
+	font-size: 1.5rem;
+	margin-bottom: 0.9375rem;
+}
+
+.listing-features > .section-heading,
+.listing-apply .section-heading {
+	color: var(--secondary-color);
+	font-size: 1.5rem;
+	margin-bottom: 0.9375rem;
+}
+
+.listing-features,
+.listing-apply {
+	margin-bottom: 1.25rem;
+}
+
+.listing-features li {
+	font-size: 1rem;
+	margin-bottom: 0.5rem;
+}
+
+li {
+	list-style-type: none;
+}
+
+label,
+input {
+	display: block;
+}
+
+label {
+	color: var(--secondary-color);
+	font-weight: 700;
+	text-transform: uppercase;
+	font-size: 0.75rem;
+}
+
+input {
+	font-size: 1rem;
+	margin-bottom: 0.9375rem;
+	padding: 0.625rem;
+	width: min(100%, 25rem);
+	border-top: none;
+	border-right: none;
+	border-left: none;
+	border-bottom: solid 0.01875rem;
+}
+
+@media (max-width: 64rem) {
+	.listing-photo {
+		width: 100%;
+		height: 25rem;
+		float: none;
+		margin-bottom: 1.5rem;
+	}
+}

@@ -1,151 +1,121 @@
-# Exercise 2: Add routes to the application
+# Exercise 2: Understand the Routing Setup
 
-The next few lab exercises will focus on building Angular features and components to implement various functionalities.
+## Goal
 
-For this lab, let's enable routing in the app and define new routes so that the `Home Gallery` app can support navigation between different views.
+Review how this Angular 19 app organizes routing using the current standalone pattern, and understand why each file matters.
 
-## Create a default info component
+By the end of this exercise, you should be able to explain:
+- where routes are defined
+- where the router is registered
+- where route content is rendered
 
-We need to create an info component called `InfoComponent`. This component will represent the info page that provides more information about a given housing location.
+## Part 1: Route definitions
 
-Ask `Copilot chat` how to create a new Angular component. If you are happy with the suggestion, follow them to create `InfoComponent`.
+Open `src/app/routes.ts`. You should see a route table similar to:
 
-<details>
-  <summary>Hint - Possible Solution</summary>
-
-```
-ng generate component info
-```
-
-</details>
-
-## Add route to new component
-
-<!-- In the previous step you removed the reference to the <app-home> component in the template. In this step, you will add a new route to that component. -->
-
-In the `src/app` directory, open `routes.ts`. This file is where we will define the routes in the application. 
-
-Open `routes.ts`, we need to make the a few updates to create a route. Ask copilot to add a file level imports for the `HomeComponent`, `DetailsComponent` and the Angular `Routes` type that you'll use in the route definitions.
-
-<details>
-  <summary>Hint - Possible Solution</summary>
-
-```
-// Import components and Routes
-import {Routes} from '@angular/router';
-import {HomeComponent} from './home/home.component';
-import {DetailsComponent} from './details/details.component';
-```
-
-</details>
-
-Ask copilot to complete the variable called `routeConfig` of type `Routes` by defining two routes for the app. Ask a follow up question to make sure `details` route uses `/:id`. Double check if the export of the `routes.ts` too.
-
-<details>
-  <summary>Hint - Possible Solution</summary>
-
-```
-// Add routes to the app
+```typescript
 const routeConfig: Routes = [
   {
     path: '',
     component: HomeComponent,
-    title: 'Home page',
+    title: 'Home Gallery',
   },
   {
     path: 'details/:id',
     component: DetailsComponent,
-    title: 'Home details',
+    title: 'Location Details',
+  },
+  {
+    path: '**',
+    redirectTo: '',
   },
 ];
-export default routeConfig;
 ```
+
+Ask Copilot Chat:
+
+```text
+Explain what this route configuration does, especially the :id parameter and the wildcard route.
+```
+
+The route table is the "map" that tells Angular which component to show for each URL.
+
+Beginner mental model:
+1. User enters URL
+2. Angular checks the route table
+3. Matching component is selected
+4. Component is rendered in `router-outlet`
+
+<details>
+  <summary>What each route does</summary>
+
+- `path: ''` — the empty path is the home page (root `/`)
+- `path: 'details/:id'` — dynamic route that reads an id from the URL
+- `path: '**'` — wildcard that catches any unmatched URL and redirects to home
 
 </details>
 
+## Part 2: Register the router
 
-## Add routing to the application
+Open `src/app/app.config.ts`. You should see:
 
-In `src/main.ts`, we need to make the updates to enable routing in the application.
-
-Ask copilot how to import the routes file and the provideRouter function. Keep the empty `routes.ts` file open in te tabs that will provide context to copilot. If the response does not look right (e.g. for different Angular version), you can add more information to the prompt and try again.
-
-<details>
-  <summary>Hint - Possible Solution</summary>
-
-```
-// Import routing details in src/main.ts
+```typescript
 import {provideRouter} from '@angular/router';
-import routeConfig from './app/routes';
+import routeConfig from './routes';
+
+export const appConfig: ApplicationConfig = {
+  providers: [provideRouter(routeConfig)],
+};
 ```
 
-</details>
+This tells the Angular app to use the routes defined in `routes.ts`. Unlike older tutorials that wired routing inside `main.ts`, this pattern keeps all app-wide setup in one place.
 
-Then, ask copilot how to update the call to bootstrapApplication to include the routing configuration. If `provideRouter` reference is missing, select the whole `main.ts` and right click to use `Copilot -> Fix` action.
+Why this is helpful:
+- easier to find app-wide providers later
+- cleaner startup code in `main.ts`
+- more consistent with modern standalone Angular projects
 
-<details>
-  <summary>Hint - Possible Solution</summary>
+Ask Copilot:
 
-```
-// Add router configuration in src/main.ts
-bootstrapApplication(AppComponent, {
-  providers: [provideProtractorTestingSupport(), provideRouter(routeConfig)],
-}).catch((err) => console.error(err));
-```
-
-</details>
-
-Next, open `src/app/app.component.ts` file, we need to update the component to use routing.
-
-Rather than using `Copilot Chat`, try to use `inline chat` this time. Ask in the popup chatbox, `Add a file level import for RouterModule from Angular`. Go to line 2, and right click to open `Copilot -> Inline Chat` or use shortcut.
-
-<details>
-  <summary>Hint - Possible Solution</summary>
-
-```
-// Import RouterModule in src/app/app.component.ts
-import {RouterModule} from '@angular/router';
+```text
+Why is it better to register the router in app.config.ts instead of inside main.ts?
 ```
 
-</details>
+## Part 3: The shell component
 
-See if copilot can also figure out how to `Add RouterModule to the @Component metadata imports` using `inline chat`. Go to `imports` line in the file, use `Inline Chat` again.
+Open `src/app/app.component.ts`. You should see imports for `RouterLink` and `RouterOutlet`:
 
-<details>
-  <summary>Hint - Possible Solution</summary>
-
-```
-// Import RouterModule in src/app/app.component.ts
-  imports: [HomeComponent, RouterModule],
+```typescript
+import {RouterLink, RouterOutlet} from '@angular/router';
 ```
 
-</details>
+And in the template, a `<router-outlet>` element:
 
-Let's do the same to replace the `<app-home></app-home>` tag with the `<router-outlet>` directive, and add a `<a>` link back to the home page around `<header>` in the template property.
-
-<details>
-  <summary>Hint - Possible Solution</summary>
-
-```
-// Add router-outlet in src/app/app.component.ts
-<main>
-  <a [routerLink]="['/']">
-    <header class="brand-name">
-      <img class="brand-logo" src="/assets/logo.svg" alt="logo" aria-hidden="true" />
-    </header>
-  </a>
-  <section class="content">
-    <router-outlet></router-outlet>
-  </section>
-</main>
-
+```html
+<router-outlet></router-outlet>
 ```
 
-</details>
+This is where Angular will render the active route's component. The `RouterLink` directive on the header's logo link enables navigation.
 
-Save all changes and confirm that the application works in the browser. The application should still display the list of housing locations.
+Simple rule:
+- `RouterLink` = how users navigate
+- `RouterOutlet` = where the selected page appears
 
-If there is any reference errors, try to copy the error into copilot chat, and see if it is able to resolve the errors for you. If any explanation is required, select the code and use `#selection` and `/explain` in the chat windows.
+Ask Copilot to explain:
+
+```text
+What does <router-outlet> do, and why does the app component need RouterLink and RouterOutlet?
+```
+
+## Checkpoint
+
+- The app still runs at `http://localhost:4200`.
+- Home page loads through the router (not hardcoded in the template).
+- You can explain what the `:id` parameter is for.
+
+Quick self-check:
+- If you manually change URL to `/details/1`, do you see the details page?
+- If you enter a wrong URL like `/abc`, does it redirect to home?
 
 ---
 

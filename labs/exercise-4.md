@@ -1,184 +1,227 @@
 
-# Exercise 4: Adding a form to your Angular app
+# Exercise 4: Add the Application Form
 
-This lab will add a form that collects user data in an Angular app. The data collected by the form is sent only to the app’s service, which writes it to the browser console. Using a REST API to send and receive the form's data is not covered in this lesson.
+## Goal
 
-## Add a method to send form data
+Collect basic applicant data (name and email) on the details page and send it to the service layer.
 
-This step adds a method to your app's service that receives the form data to send to the data's destination. In this example, the method writes the data from the form to the browser's console log.
+By the end of this exercise, you should understand:
+- why forms are managed in component state
+- how form fields connect to `FormGroup`
+- what happens from submit click to service call
 
-Open `src/app/housing.service.ts`, inside the `HousingService` class, let's ask copilot to add a new function and it will log the field names: `submitApplication(firstName: string, lastName: string, email: string)`. Only mention the fields you would like to add and see if copilot can produce the log string.
+## Part 1: Add a service method to handle applications
 
-Confirm that the app builds without error. Correct any errors before you continue to the next step. You can use copilot `fix` option to resolve syntax errors.
+Open `src/app/housing.service.ts`. You should see methods like `getAllHousingLocations()` and `getHousingLocationById()`:
+
+```typescript
+export class HousingService {
+  private apiUrl = 'http://localhost:3000/locations';
+  
+  async getAllHousingLocations(): Promise<HousingLocation[]> {
+    // ...
+  }
+
+  async getHousingLocationById(id: number): Promise<HousingLocation | undefined> {
+    // ...
+  }
+}
+```
+
+You need to add a new method to handle form submissions. Ask Copilot:
+
+```text
+I have a housing service with async methods. 
+Add a submitApplication method that accepts firstName, lastName, and email parameters as an object.
+The method should log a confirmation message and then return a Promise.
+```
+
+The method should look something like:
+
+```typescript
+submitApplication(data: { firstName: string; lastName: string; email: string }): Promise<boolean> {
+  console.log(`Application received for ${data.firstName} ${data.lastName} (${data.email})`);
+  return Promise.resolve(true);
+}
+```
 
 <details>
-  <summary>Hint - Possible Solution</summary>
-
-```
-// Submit method in src/app/housing.service.ts
-submitApplication(firstName: string, lastName: string, email: string) {
-    console.log(
-      `Homes application received: firstName: ${firstName}, lastName: ${lastName}, email: ${email}.`,
-    );
-  }
-```
-
+  <summary>Why promise-based?</summary>
+  Even though we're just logging right now, making it return a Promise is good practice. 
+  Later, you might want to send this data to an actual server, and that would also be asynchronous.
 </details>
 
-## Add the form functions to the details page
+Simple mental model:
+- component collects input
+- service handles business action
+- service can later swap log output for real API call
 
-This step adds the code to the details page that handles the form's interactions. Go to `src/app/details/details.component.ts`.
+## Part 2: Set up a reactive form in the details component
 
-After the import statements at the top of the file, ask copilot to both import the Angular form classes and update the `imports` property for the `DetailsComponent` decorator metadata.
+Open `src/app/details/details.component.ts`. The component currently displays housing information:
 
-<details>
-  <summary>Hint - Possible Solution</summary>
-
-```
-// imports directive in src/app/details/details.component.ts
-import {Component, inject} from '@angular/core';
-import {HousingService} from '../housing.service';
-import {HousingLocation} from '../housinglocation';
-import {CommonModule} from '@angular/common';
-import {ActivatedRoute} from '@angular/router';
-import {FormControl, FormGroup, ReactiveFormsModule} from '@angular/forms';
+```typescript
+import { Component, OnInit } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
+import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { HousingLocation } from '../housinglocation';
+import { HousingService } from '../housing.service';
 
 @Component({
   selector: 'app-details',
-  imports: [CommonModule, ReactiveFormsModule],
-  template: `....`,
-  styleUrls: ['./details.component.css'],
+  standalone: true,
+  imports: [ReactiveFormsModule],
+  // ...
 })
-```
-
-</details>
-
-Go to `DetailsComponent` class, before the `constructor()` method. In Angular, `FormGroup` and `FormControl` are types that enable you to build forms. The FormControl type can provide a default value and shape the form data. Let's create a new function `applyForm` using `FormGroup` and add `firstName`, `lastName`, `email` fields.
-
-<details>
-  <summary>Hint - Possible Solution</summary>
-
-```
-// template directive in src/app/details/details.component.ts
-export class DetailsComponent {
-  route: ActivatedRoute = inject(ActivatedRoute);
-  housingService = inject(HousingService);
+export class DetailsComponent implements OnInit {
   housingLocation: HousingLocation | undefined;
-  housingLocationId = -1;
-
-  applyForm = new FormGroup({
-    firstName: new FormControl(''),
-    lastName: new FormControl(''),
-    email: new FormControl(''),
-  });
   
-  constructor() {
-    ....
-  }
-
-}
-```
-
-</details>
-
-In the `DetailsComponent` class, create `submitApplication()` function after the `constructor()` method. Add code to handle the Apply now click, it should invoke `housing.service`'s `submitApplication`.. This button does not exist yet - you will add it in the next step. The FormControls may return null. The code should use the nullish coalescing operator to default to empty string if the value is null.
-
-<details>
-  <summary>Hint - Possible Solution</summary>
-
-```
-export class DetailsComponent {
-  route: ActivatedRoute = inject(ActivatedRoute);
-  housingService = inject(HousingService);
-  housingLocation: HousingLocation | undefined;
-
-  applyForm = new FormGroup({
-    firstName: new FormControl(''),
-    lastName: new FormControl(''),
-    email: new FormControl(''),
-  });
+  constructor(
+    private route: ActivatedRoute,
+    private housingService: HousingService
+  ) {}
   
-  constructor() {
-    const housingLocationId = Number(this.route.snapshot.params['id']);
-    this.housingLocation = this.housingService.getHousingLocationById(housingLocationId);
-  }
-
-  submitApplication() {
-    this.housingService.submitApplication(
-      this.applyForm.value.firstName ?? '',
-      this.applyForm.value.lastName ?? '',
-      this.applyForm.value.email ?? '',
-    );
+  ngOnInit() {
+    // Load housing location...
   }
 }
 ```
 
-</details>
+Now you need to add a form to collect applicant data. "Reactive Forms" is Angular's way of managing form state in TypeScript code (not just in templates). Ask Copilot:
 
-Confirm that the app builds without error. Correct any errors before you continue to the next step.
+```text
+In this standalone Angular component, how do I create a reactive form with three fields: firstName, lastName, and email?
+Show me how to create a FormGroup with FormControl objects for each field.
+```
 
-## Add the form's markup to the details page
+Add this code to your component:
 
-This step adds the markup to the details page that displays the form. Open `src/app/details/details.component.ts`.
+```typescript
+applyForm = new FormGroup({
+  firstName: new FormControl(''),
+  lastName: new FormControl(''),
+  email: new FormControl(''),
+});
 
-In the `DetailsComponent` decorator metadata, ask copilot to add the `template` form HTML in the end of the page to have actual form and fields, it could look like below image.
-
-![alt text](imgs/exec3-form.png)
-
-The template should include an event handler `(submit)="submitApplication()"`. Angular uses parentheses syntax around the event name to define events in the template code. The code on the right hand side of the equals sign is the code that should be executed when this event is triggered. You can bind to browser events and custom events.
+submitApplication() {
+  const formData = this.applyForm.value;
+  this.housingService.submitApplication(formData as any);
+  this.applyForm.reset();
+}
+```
 
 <details>
-  <summary>Hint - Possible Solution</summary>
-  
-```
-// template directive in src/app/details/details.component.ts
-<article>
-    ......
-    <section class="listing-features">
-      <h2 class="section-heading">About this housing location</h2>
-      <ul>
-        <li>Units available: {{ housingLocation?.availableUnits }}</li>
-        <li>Does this location have wifi: {{ housingLocation?.wifi }}</li>
-        <li>Does this location have laundry: {{ housingLocation?.laundry }}</li>
-      </ul>
-    </section>
-    <section class="listing-apply">
-      <h2 class="section-heading">Apply now to live here</h2>
-      <form [formGroup]="applyForm" (submit)="submitApplication()">
-        <label for="first-name">First Name</label>
-        <input id="first-name" type="text" formControlName="firstName" />
-        <label for="last-name">Last Name</label>
-        <input id="last-name" type="text" formControlName="lastName" />
-        <label for="email">Email</label>
-        <input id="email" type="email" formControlName="email" />
-        <button type="submit" class="primary">Apply now</button>
-      </form>
-    </section>
-  </article>
-`,
-styleUrls: ['./details.component.css'],
-```
-
+  <summary>What's FormGroup and FormControl?</summary>
+  - `FormControl` represents a single form field (like a text input)
+  - `FormGroup` groups multiple FormControls together into one object
+  - When you call `.value`, you get all the current values from all controls
+  - `.reset()` clears the form for the next submission
 </details>
 
-Confirm that the app builds without error. Correct any errors before you continue to the next step.
+Why this pattern is useful for beginners:
+- the form state lives in one object (`applyForm`)
+- reading form values is predictable (`this.applyForm.value`)
+- reset behavior is explicit and easy to test
 
-![alt text](imgs/exec7-app.png)
+## Part 3: Create the form template
 
-## Test your app's new form
+Open `src/app/details/details.component.html` (or add a template to your component). Below the housing details section, add the application form:
 
-This step tests the new form to see that when the form data is submitted to the app, the form data appears in the console log.
+```html
+<section class="apply-section">
+  <h2>Apply to Live Here</h2>
 
-- In the Terminal pane of your IDE, run ng serve, if it isn't already running.
-- In your browser, open your app at http://localhost:4200.
-- Right click on the app in the browser and from the context menu, choose Inspect.
-- In the developer tools window, choose the Console tab. Make sure that the developer tools window is visible for the next steps
-- In your app:
-  * Select a housing location and click Learn more, to see details about the house.
-  * In the house's details page, scroll to the bottom to find the new form.
-  * Enter data into the form's fields - any data is fine.
-  * Choose Apply now to submit the data.
-- In the developer tools window, review the log output to find your form data.
+  <form [formGroup]="applyForm" (ngSubmit)="submitApplication()">
+    <div class="form-group">
+      <label for="firstName">First Name</label>
+      <input 
+        id="firstName"
+        type="text" 
+        formControlName="firstName"
+        placeholder="Enter first name"
+      />
+    </div>
 
----------------
+    <div class="form-group">
+      <label for="lastName">Last Name</label>
+      <input 
+        id="lastName"
+        type="text" 
+        formControlName="lastName"
+        placeholder="Enter last name"
+      />
+    </div>
+
+    <div class="form-group">
+      <label for="email">Email</label>
+      <input 
+        id="email"
+        type="email" 
+        formControlName="email"
+        placeholder="Enter email"
+      />
+    </div>
+
+    <button type="submit" class="primary">Submit Application</button>
+  </form>
+</section>
+```
+
+<details>
+  <summary>Template bindings explained</summary>
+  - `[formGroup]="applyForm"` connects the HTML form to your TypeScript `applyForm` object
+  - `formControlName="firstName"` connects each input to a specific FormControl
+  - `(ngSubmit)="submitApplication()"` calls your method when the form is submitted
+  - Labels have `for="fieldName"` to associate them with inputs (`id="fieldName"`)
+</details>
+
+Accessibility note:
+- keep `label for` and `input id` matching so screen readers can announce fields correctly
+
+Now add basic styling. Open `src/app/details/details.component.css` and ask Copilot:
+
+```text
+Generate CSS for a form section. I have a section.apply-section with a form. 
+The form has input fields and a submit button. Make it look clean with spacing and readable labels.
+```
+
+Apply the generated styles to your CSS file.
+
+## Validate the form flow
+
+1. Save your changes. The app should rebuild automatically if running in watch mode (`ng serve`).
+2. Open a housing location page.
+3. Scroll down to the "Apply to Live Here" form.
+4. Fill in First Name, Last Name, and Email.
+5. Click "Submit Application".
+6. Open the browser console (F12 or right-click → Inspect → Console tab).
+7. You should see a message like: `Application received for John Doe (john@example.com)`
+
+What to observe carefully:
+- submit does not reload the page
+- form values are sent to service once per click
+- form resets after submit
+
+![Application form](imgs/exec3-form.png)
+
+## Checkpoint
+
+✓ The details page displays the application form  
+✓ Filling in and submitting the form works (check console for the log message)  
+✓ The form clears after successful submission  
+✓ The app builds without template or TypeScript errors  
+
+If you see any console errors, check that:
+- `FormGroup` is imported from `@angular/forms`
+- `applyForm` is defined in your component
+- All `formControlName` values match the control names in your FormGroup
+- The form element has `[formGroup]="applyForm"` binding
+
+If submit does nothing:
+- verify button type is `submit`
+- verify form uses `(ngSubmit)="submitApplication()"`
+- verify method name in template matches method in component exactly
+
+---
+
 [Previous](./exercise-3.md) | [Next](./exercise-5.md)

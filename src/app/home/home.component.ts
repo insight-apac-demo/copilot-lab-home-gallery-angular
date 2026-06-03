@@ -9,14 +9,15 @@ import {HousingService} from '../housing.service';
   imports: [CommonModule, HousingLocationComponent],
   template: `
     <section>
-      <form>
-        <input type="text" placeholder="Filter by city">
-        <button class="primary" type="button">Search</button>
+      <form class="search-form" (submit)="$event.preventDefault(); filterResults(filter.value)">
+        <label class="visually-hidden" for="location-filter">Filter locations</label>
+        <input id="location-filter" type="text" placeholder="Filter by city or state" #filter />
+        <button class="primary" type="submit">Search</button>
       </form>
     </section>
     <section class="results">
       <app-housing-location
-        *ngFor="let housingLocation of housingLocationList"
+        *ngFor="let housingLocation of filteredLocationList; trackBy: trackByLocationId"
         [housingLocation]="housingLocation"
       ></app-housing-location>
     </section>
@@ -26,11 +27,33 @@ import {HousingService} from '../housing.service';
 export class HomeComponent {
   housingLocationList: HousingLocation[] = [];
   housingService: HousingService = inject(HousingService);
-  
-  constructor() {
-      this.housingLocationList = this.housingService.getAllHousingLocations();
-  }
-  filterResults(text: string) {
+  filteredLocationList: HousingLocation[] = [];
 
+  constructor() {
+    void this.loadHousingLocations();
+  }
+
+  async loadHousingLocations(): Promise<void> {
+    this.housingLocationList = await this.housingService.getAllHousingLocations();
+    this.filteredLocationList = this.housingLocationList;
+  }
+
+  filterResults(text: string) {
+    if (!text.trim()) {
+      this.filteredLocationList = this.housingLocationList;
+      return;
+    }
+
+    const normalizedText = text.toLowerCase();
+    this.filteredLocationList = this.housingLocationList.filter((housingLocation) =>
+      [housingLocation.name, housingLocation.city, housingLocation.state]
+        .join(' ')
+        .toLowerCase()
+        .includes(normalizedText),
+    );
+  }
+
+  trackByLocationId(_: number, housingLocation: HousingLocation): number {
+    return housingLocation.id;
   }
 }

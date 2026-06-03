@@ -7,13 +7,18 @@
   justify-content: space-around;
 }
 
+.search-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 input[type="text"] {
   border: solid 1px var(--primary-color);
   padding: 10px;
   border-radius: 8px;
-  margin-right: 4px;
-  display: inline-block;
-  width: 30%;
+  flex: 1 1 18rem;
+  max-width: 28rem;
 }
 
 button {
@@ -29,12 +34,20 @@ button {
       grid-template-columns: repeat(2, 1fr);
   }
   input[type="text"] {
-      width: 70%;
+    max-width: 100%;
   }   
 }
 
 @media (max-width: 499px) {
   .results {
       grid-template-columns: 1fr;
-  }    
+  }
+
+  .search-form {
+    flex-direction: column;
+  }
+
+  button {
+    width: 100%;
+  }
 }
